@@ -29,7 +29,7 @@ const streamToBuffer = async (stream: Readable): Promise<Buffer> => {
 export const handler: S3Handler = async (event) => {
   const startedAt = Date.now();
   const tableName = process.env.SUBMISSION_HISTORY_TABLE;
-  const modelId = process.env.BEDROCK_MODEL_ID || "apac.anthropic.claude-3-haiku-20240307-v1:0";
+  const modelId = process.env.BEDROCK_MODEL_ID || "global.anthropic.claude-haiku-4-5-20251001-v1:0";
   const bedrockRegion = process.env.BEDROCK_REGION || "ap-south-1";
 
   const bedrockClient = new BedrockRuntimeClient({ region: bedrockRegion });
@@ -58,53 +58,69 @@ export const handler: S3Handler = async (event) => {
       const base64Image = imageBuffer.toString("base64");
       const contentType = s3Response.ContentType || "image/jpeg";
 
-      // 2. Call AWS Bedrock with Anthropic Claude 3.5 Haiku
-      const prompt = `Analyze this medical prescription image carefully. Extract all information into valid JSON with this exact schema:
+      // 2. Call AWS Bedrock with Anthropic Claude Haiku 4.5
+      const prompt = `You are a clinical pharmacist and medical OCR specialist deciphering handwritten Indian doctor prescriptions (ENT clinic).
+
+CRITICAL LAYOUT INSTRUCTIONS:
+1. MULTI-COLUMN LAYOUT: Prescriptions frequently contain TWO VERTICAL COLUMNS of medications. Look closely:
+   - LEFT COLUMN (under the left "Rx" symbol): typically contains 4-6 items (e.g., steam inhalation, tablets/capsules, anti-allergic, anti-inflammatory).
+   - RIGHT COLUMN (under the right "Rx" symbol or below ear/vocal sketches): typically contains 4-6 items (e.g., antibiotic tablets like Mahacef, syrups like Mucolite, gargles/fomentation, muscle relaxants, Monticope).
+2. EXTRACT ALL ITEMS: Scan BOTH columns thoroughly from top to bottom. You MUST extract EVERY SINGLE prescribed medication, tablet, capsule, syrup, drop, spray, gargle, or treatment into the "medicines" array (med-1, med-2, med-3, ...). Aim to capture all 8-10 items.
+3. NEVER STOP EARLY: Do not stop after just 1 medicine or just 1 column.
+4. DOSAGE & TIMINGS: For each medicine, extract:
+   - Name and strength (e.g. Tab. Mahacef 200mg, Tab. Deflaz 6mg, Cap. Nexpro RD, Syp. Mucolite)
+   - Active generic composition
+   - Dosage form & frequency (OD = Once daily, BD = Twice daily / 1-0-1, TDS = Thrice daily / 1-1-1 / down arrows ↓ ↓ ↓)
+   - Duration (e.g. 5 days / x 5, 7 days)
+   - Doctor's handwritten directions & food timings
+   - Bioequivalent generic / substitute brand alternatives with approximate price in INR.
+
+Return ONLY valid JSON matching this schema:
 {
   "doctorDetails": {
-    "name": "Doctor Name (e.g. Dr. John Doe)",
-    "qualification": "Specialty/Qualification",
-    "clinic": "Clinic/Hospital Name",
+    "name": "Doctor Name (e.g. Dr. G.K. Tandon)",
+    "qualification": "Degrees / Specialty",
+    "clinic": "Clinic or Hospital name and address",
     "date": "Prescription Date",
-    "patientName": "Patient Name if visible"
+    "patientName": "Patient Name & Age if visible (e.g. Mrs Mamta - 60 yr)"
   },
-  "safetyNotes": ["Safety warning 1", "Safety warning 2"],
+  "safetyNotes": ["Precaution or clinical observation 1", "Precaution 2"],
   "medicines": [
     {
       "id": "med-1",
       "name": "Brand Name & Strength",
-      "genericName": "Active Ingredient",
-      "dosage": "Dosage form (e.g. 500mg Tablet)",
-      "frequency": "Frequency (e.g. 3 times daily)",
-      "duration": "Duration (e.g. 5 days)",
+      "genericName": "Active Chemical Ingredient",
+      "dosage": "Dosage form (e.g. 1 Tab, 2 Drops, 5ml)",
+      "frequency": "Frequency in plain English (e.g. Twice daily, Once daily at night)",
+      "duration": "Duration (e.g. 5 days, 1 week)",
       "timing": {
         "morning": true,
         "afternoon": false,
         "night": true,
-        "timingNote": "Take after food"
+        "timingNote": "Food timing (e.g. After food, Before meals)"
       },
-      "doctorInstructions": "Doctor's specific handwritten or typed directions",
-      "purpose": "Condition being treated",
+      "doctorInstructions": "Doctor's handwritten directions",
+      "purpose": "Clinical indication (ENT / Allergy / Infection / Acidity)",
       "isAvailable": true,
       "alternatives": [
         {
           "id": "alt-1a",
-          "name": "Substitute Brand Name",
+          "name": "Substitute Brand or Generic",
           "type": "Substitute Brand",
-          "manufacturer": "Manufacturer Name",
-          "composition": "Exact Active Composition",
-          "priceEstimate": "Estimated Price",
+          "manufacturer": "Pharma Manufacturer",
+          "composition": "Active Composition",
+          "priceEstimate": "Estimated Price in INR",
           "description": "Why this is an equivalent alternative"
         }
       ]
     }
   ]
 }
-Return ONLY pure JSON without markdown backticks or extra text.`;
+Return ONLY pure JSON without markdown backticks or commentary.`;
 
       const bedrockPayload = {
         anthropic_version: "bedrock-2023-05-31",
-        max_tokens: 2048,
+        max_tokens: 4096,
         messages: [
           {
             role: "user",

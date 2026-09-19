@@ -1,36 +1,34 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: RXCLEAR Stage 0 serverless infrastructure scaffold.
+Description: RXCLEAR – AI-powered prescription analysis platform.
 
 Parameters:
   BedrockModelId:
     Type: String
-    Description: "TODO_CONFIRM: bare Bedrock model ID or cross-region inference profile ARN approved for RXCLEAR."
+    Default: apac.anthropic.claude-3-haiku-20240307-v1:0
+    Description: Bedrock inference profile ID for prescription OCR analysis.
   BedrockRegion:
     Type: String
     Default: ap-south-1
-    Description: Bedrock region. Use us-east-1 only if the approved model is unavailable in Mumbai.
+    Description: AWS region for Bedrock API calls.
   FrontendOrigin:
     Type: String
     Default: http://localhost:5173
-    Description: Amplify site origin after it is manually connected; use localhost while developing.
+    Description: Frontend origin for CORS headers.
 
 Globals:
   Function:
     Runtime: nodejs20.x
     Architectures:
       - x86_64
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
 
 Resources:
-  PrescriptionApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      StageName: Prod
-      Cors:
-        AllowMethods: "'GET,POST,OPTIONS'"
-        AllowHeaders: "'Content-Type'"
-        AllowOrigin: !Sub "'${FrontendOrigin}'"
-
+  # ─── S3 Bucket ──────────────────────────────────────────────
   PrescriptionUploads:
     Type: AWS::S3::Bucket
     Properties:
@@ -48,18 +46,21 @@ Resources:
           - AllowedHeaders:
               - "*"
             AllowedMethods:
+              - GET
+              - PUT
               - POST
+              - HEAD
             AllowedOrigins:
-              - http://localhost:5173
-              - !Ref FrontendOrigin
+              - "*"
             MaxAge: 300
       LifecycleConfiguration:
         Rules:
-          - Id: ExpirePrescriptionUploadsAfterOneDay
-            Prefix: uploads/
+          - Id: ExpireUploadsAfterOneDay
             Status: Enabled
+            Prefix: uploads/
             ExpirationInDays: 1
 
+  # ─── DynamoDB Tables ────────────────────────────────────────
   DrugInteractionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -85,6 +86,7 @@ Resources:
         AttributeName: expiresAt
         Enabled: true
 
+  # ─── Upload Handler Lambda ─────────────────────────────────
   UploadHandlerFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -98,20 +100,24 @@ Resources:
         Variables:
           SUBMISSION_HISTORY_TABLE: !Ref SubmissionHistoryTable
           UPLOAD_BUCKET: !Ref PrescriptionUploads
+          FRONTEND_ORIGIN: !Ref FrontendOrigin
       Policies:
-        - Statement:
-            Effect: Allow
-            Action:
-              - dynamodb:PutItem
-            Resource: !GetAtt SubmissionHistoryTable.Arn
+        - DynamoDBWritePolicy:
+            TableName: !Ref SubmissionHistoryTable
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub "arn:${AWS::Partition}:s3:::${PrescriptionUploads}/*"
       Events:
         Upload:
           Type: Api
           Properties:
-            RestApiId: !Ref PrescriptionApi
             Path: /upload
             Method: post
 
+  # ─── Analyze Rx Lambda (triggered by S3) ────────────────────
   AnalyzeRxFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -128,27 +134,21 @@ Resources:
           DRUG_INTERACTIONS_TABLE: !Ref DrugInteractionsTable
           SUBMISSION_HISTORY_TABLE: !Ref SubmissionHistoryTable
       Policies:
-        - Statement:
-            Effect: Allow
-            Action:
-              - s3:GetObject
-            Resource: !Sub "${PrescriptionUploads.Arn}/uploads/*"
-        - Statement:
-            Effect: Allow
-            Action:
-              - dynamodb:GetItem
-            Resource: !GetAtt DrugInteractionsTable.Arn
-        - Statement:
-            Effect: Allow
-            Action:
-              - dynamodb:GetItem
-              - dynamodb:UpdateItem
-            Resource: !GetAtt SubmissionHistoryTable.Arn
-        - Statement:
-            Effect: Allow
-            Action:
-              - bedrock:InvokeModel
-            Resource: !Ref BedrockModelId
+        - DynamoDBReadPolicy:
+            TableName: !Ref DrugInteractionsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SubmissionHistoryTable
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: "arn:aws:s3:::*/*"
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: "*"
       Events:
         PrescriptionUploaded:
           Type: S3
@@ -161,6 +161,7 @@ Resources:
                   - Name: prefix
                     Value: uploads/
 
+  # ─── Get Analysis Lambda ────────────────────────────────────
   GetAnalysisFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -174,23 +175,19 @@ Resources:
         Variables:
           SUBMISSION_HISTORY_TABLE: !Ref SubmissionHistoryTable
       Policies:
-        - Statement:
-            Effect: Allow
-            Action:
-              - dynamodb:GetItem
-            Resource: !GetAtt SubmissionHistoryTable.Arn
+        - DynamoDBReadPolicy:
+            TableName: !Ref SubmissionHistoryTable
       Events:
         Analysis:
           Type: Api
           Properties:
-            RestApiId: !Ref PrescriptionApi
             Path: /analysis/{submissionId}
             Method: get
 
 Outputs:
   ApiEndpoint:
     Description: REST API endpoint URL.
-    Value: !Sub "https://${PrescriptionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
   UploadBucketName:
     Description: Private bucket for temporary prescription image uploads.
     Value: !Ref PrescriptionUploads

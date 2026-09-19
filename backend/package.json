@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "latest",
+    "@types/node": "latest",
     "typescript": "latest"
   }
 }
-

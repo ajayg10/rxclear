@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.aws-sam/
+.env*
+*.pem
+samconfig.toml
+samconfig.local.toml
+
+
+body.json
+out.json

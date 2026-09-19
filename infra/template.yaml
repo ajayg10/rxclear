@@ -1,0 +1,196 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: RXCLEAR Stage 0 serverless infrastructure scaffold.
+
+Parameters:
+  BedrockModelId:
+    Type: String
+    Description: "TODO_CONFIRM: bare Bedrock model ID or cross-region inference profile ARN approved for RXCLEAR."
+  BedrockRegion:
+    Type: String
+    Default: ap-south-1
+    Description: Bedrock region. Use us-east-1 only if the approved model is unavailable in Mumbai.
+  FrontendOrigin:
+    Type: String
+    Default: http://localhost:5173
+    Description: Amplify site origin after it is manually connected; use localhost while developing.
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+
+Resources:
+  PrescriptionApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: !Sub "'${FrontendOrigin}'"
+
+  PrescriptionUploads:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - POST
+            AllowedOrigins:
+              - http://localhost:5173
+              - !Ref FrontendOrigin
+            MaxAge: 300
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpirePrescriptionUploadsAfterOneDay
+            Prefix: uploads/
+            Status: Enabled
+            ExpirationInDays: 1
+
+  DrugInteractionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: interactionKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: interactionKey
+          KeyType: HASH
+
+  SubmissionHistoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: submissionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: submissionId
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  UploadHandlerFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      CodeUri: ../backend/
+      Handler: functions/upload-handler/index.handler
+      Timeout: 10
+      MemorySize: 256
+      Environment:
+        Variables:
+          SUBMISSION_HISTORY_TABLE: !Ref SubmissionHistoryTable
+          UPLOAD_BUCKET: !Ref PrescriptionUploads
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:PutItem
+            Resource: !GetAtt SubmissionHistoryTable.Arn
+      Events:
+        Upload:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PrescriptionApi
+            Path: /upload
+            Method: post
+
+  AnalyzeRxFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      CodeUri: ../backend/
+      Handler: functions/analyze-rx/index.handler
+      Timeout: 120
+      MemorySize: 1024
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          BEDROCK_REGION: !Ref BedrockRegion
+          DRUG_INTERACTIONS_TABLE: !Ref DrugInteractionsTable
+          SUBMISSION_HISTORY_TABLE: !Ref SubmissionHistoryTable
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action:
+              - s3:GetObject
+            Resource: !Sub "${PrescriptionUploads.Arn}/uploads/*"
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+            Resource: !GetAtt DrugInteractionsTable.Arn
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+            Resource: !GetAtt SubmissionHistoryTable.Arn
+        - Statement:
+            Effect: Allow
+            Action:
+              - bedrock:InvokeModel
+            Resource: !Ref BedrockModelId
+      Events:
+        PrescriptionUploaded:
+          Type: S3
+          Properties:
+            Bucket: !Ref PrescriptionUploads
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: uploads/
+
+  GetAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+    Properties:
+      CodeUri: ../backend/
+      Handler: functions/get-analysis/index.handler
+      Timeout: 10
+      MemorySize: 256
+      Environment:
+        Variables:
+          SUBMISSION_HISTORY_TABLE: !Ref SubmissionHistoryTable
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+            Resource: !GetAtt SubmissionHistoryTable.Arn
+      Events:
+        Analysis:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PrescriptionApi
+            Path: /analysis/{submissionId}
+            Method: get
+
+Outputs:
+  ApiEndpoint:
+    Description: REST API endpoint URL.
+    Value: !Sub "https://${PrescriptionApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  UploadBucketName:
+    Description: Private bucket for temporary prescription image uploads.
+    Value: !Ref PrescriptionUploads

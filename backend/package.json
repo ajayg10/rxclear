@@ -1,0 +1,17 @@
+{
+  "name": "@rxclear/backend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "latest",
+    "@aws-sdk/client-dynamodb": "latest",
+    "@aws-sdk/client-s3": "latest",
+    "@aws-sdk/lib-dynamodb": "latest",
+    "@aws-sdk/s3-presigned-post": "latest"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "latest",
+    "typescript": "latest"
+  }
+}
+

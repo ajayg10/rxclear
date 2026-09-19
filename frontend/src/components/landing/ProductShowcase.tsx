@@ -1,3 +1,5 @@
+import productDemoImg from "../../assets/product-demo.png";
+
 export default function ProductShowcase() {
   return (
     <section
@@ -21,71 +23,55 @@ export default function ProductShowcase() {
         </div>
 
         {/* Browser chrome frame */}
-        <div className="lp-showcase-frame">
-          <div className="lp-showcase-bar" aria-hidden="true">
+        <div 
+          className="lp-showcase-frame" 
+          style={{ 
+            background: "var(--lp-bg-2)", 
+            borderColor: "var(--lp-border)",
+            borderRadius: "16px",
+            boxShadow: "var(--lp-shadow-lg)"
+          }}
+        >
+          <div 
+            className="lp-showcase-bar" 
+            aria-hidden="true" 
+            style={{ 
+              background: "var(--lp-bg)", 
+              borderBottom: "1px solid var(--lp-border)"
+            }}
+          >
             <div className="lp-showcase-dot lp-showcase-dot-r" />
             <div className="lp-showcase-dot lp-showcase-dot-y" />
             <div className="lp-showcase-dot lp-showcase-dot-g" />
-            <div className="lp-showcase-url">rxclear.app/app</div>
+            <div 
+              className="lp-showcase-url" 
+              style={{ 
+                color: "var(--lp-text-2)", 
+                background: "rgba(0,0,0,0.04)" 
+              }}
+            >
+              rxclear.app/app
+            </div>
           </div>
 
-          <div className="lp-showcase-content">
-            {/* Medicine card */}
-            <div className="lp-app-card">
-              <div className="lp-app-label">Prescribed Medication</div>
-              <div className="lp-app-medicine">Augmentin 625 Duo</div>
-              <div className="lp-app-generic">Amoxicillin 500mg + Clavulanic Acid 125mg</div>
-
-              <div className="lp-app-notavail">
-                <span>⚠️</span> Marked NOT Available
-              </div>
-
-              <div className="lp-app-schedule">
-                <span className="lp-app-badge lp-app-badge-m">🌅 Morning</span>
-                <span className="lp-app-badge lp-app-badge-n">🌙 Night</span>
-              </div>
-
-              <p className="lp-app-instructions" style={{ marginTop: "12px" }}>
-                "Take 1 tablet every 12 hours after meals. Finish full 5-day course."
-              </p>
-            </div>
-
-            {/* Alternatives panel */}
-            <div className="lp-app-card" style={{ borderColor: "rgba(245,158,11,0.25)", background: "rgba(30,41,59,0.65)" }}>
-              <div className="lp-app-alt-title">Recommended Substitutes · Same Active Composition</div>
-
-              <div className="lp-app-alt-item">
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <div>
-                    <div className="lp-app-alt-name">Moxikind CV 625</div>
-                    <div className="lp-app-alt-comp">Amoxicillin 500mg + Clavulanate 125mg</div>
-                    <div style={{ fontSize: "0.65rem", color: "#475569", fontFamily: "Inter, sans-serif" }}>Mankind Pharma</div>
-                  </div>
-                  <div className="lp-app-alt-price">₹170 / 10 tabs</div>
-                </div>
-                <div className="lp-app-buy-row">
-                  {["Tata 1mg", "PharmEasy", "Apollo"].map((p) => (
-                    <span key={p} className="lp-app-buy-btn">{p} ↗</span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="lp-app-alt-item">
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <div>
-                    <div className="lp-app-alt-name">Generic Amoxicillin + Clav 625</div>
-                    <div className="lp-app-alt-comp">Amoxicillin 500mg + Clavulanate 125mg</div>
-                    <div style={{ fontSize: "0.65rem", color: "#475569", fontFamily: "Inter, sans-serif" }}>Jan Aushadhi Kendra</div>
-                  </div>
-                  <div className="lp-app-alt-price">₹55 / 10 tabs</div>
-                </div>
-                <div className="lp-app-buy-row">
-                  {["Tata 1mg", "Netmeds"].map((p) => (
-                    <span key={p} className="lp-app-buy-btn">{p} ↗</span>
-                  ))}
-                </div>
-              </div>
-            </div>
+          <div 
+            className="lp-showcase-content" 
+            style={{ 
+              padding: 0,
+              background: "var(--lp-bg)",
+              display: "flex"
+            }}
+          >
+            <img 
+              src={productDemoImg} 
+              alt="RXCLEAR product demonstration"
+              style={{ 
+                width: "100%", 
+                height: "100%", 
+                objectFit: "contain",
+                display: "block" 
+              }} 
+            />
           </div>
         </div>
       </div>

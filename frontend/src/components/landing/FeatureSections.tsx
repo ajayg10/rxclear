@@ -1,4 +1,7 @@
 import { Link } from "react-router-dom";
+import feature01Img from "../../assets/feature01.png";
+import feature02Img from "../../assets/feature02.png";
+import feature03Img from "../../assets/feature03.png";
 
 export default function FeatureSections() {
   return (
@@ -25,45 +28,11 @@ export default function FeatureSections() {
             </div>
 
             <div className="lp-feature-visual" aria-hidden="true">
-              <div className="lp-feature-visual-inner">
-                {/* Prescription card */}
-                <div className="lp-rx-card">
-                  <div className="lp-rx-header">
-                    <div className="lp-rx-logo" aria-hidden="true">Rx</div>
-                    <div>
-                      <div className="lp-rx-doctor">Dr. S. K. Sharma, MD</div>
-                      <div className="lp-rx-doctor-sub">General Physician · Apollo Clinic</div>
-                    </div>
-                  </div>
-                  {[
-                    {
-                      name: "Augmentin 625 Duo",
-                      detail: "625mg · Twice daily · 5 days",
-                      morning: true,
-                      night: true,
-                    },
-                    {
-                      name: "Pan D Capsule",
-                      detail: "40mg + 30mg SR · Once daily · 7 days",
-                      morning: true,
-                      night: false,
-                    },
-                  ].map((med) => (
-                    <div key={med.name} className="lp-rx-med">
-                      <div className="lp-rx-med-name">{med.name}</div>
-                      <div className="lp-rx-med-detail">{med.detail}</div>
-                      <div className="lp-rx-timing">
-                        {med.morning && (
-                          <span className="lp-rx-timing-badge lp-rx-timing-morning">🌅 Morning</span>
-                        )}
-                        {med.night && (
-                          <span className="lp-rx-timing-badge lp-rx-timing-night">🌙 Night</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <img 
+                src={feature01Img} 
+                alt="RXCLEAR medication schedule UI"
+                style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px", boxShadow: "0 12px 40px rgba(0,0,0,0.08)" }}
+              />
             </div>
           </div>
         </div>
@@ -93,30 +62,11 @@ export default function FeatureSections() {
             </div>
 
             <div className="lp-feature-visual" aria-hidden="true">
-              <div className="lp-alt-visual">
-                {/* Original — crossed out / unavailable */}
-                <div className="lp-alt-source">
-                  <span className="lp-alt-source-name">Augmentin 625 Duo</span>
-                  <span className="lp-alt-source-badge">⚠ Not available</span>
-                </div>
-                {/* Alternatives */}
-                <div className="lp-alt-card">
-                  <div className="lp-alt-tag">Substitute Brand</div>
-                  <div className="lp-alt-name">Moxikind CV 625</div>
-                  <div className="lp-alt-comp">Amoxicillin 500mg + Clavulanate 125mg</div>
-                  <span className="lp-alt-match">
-                    <span>✓</span> Same composition
-                  </span>
-                </div>
-                <div className="lp-alt-card">
-                  <div className="lp-alt-tag">Generic Equivalent</div>
-                  <div className="lp-alt-name">Generic Amoxicillin + Clav 625</div>
-                  <div className="lp-alt-comp">Jan Aushadhi Kendra · ₹55 / 10 tabs</div>
-                  <span className="lp-alt-match">
-                    <span>✓</span> Same composition · save 65%
-                  </span>
-                </div>
-              </div>
+              <img 
+                src={feature02Img} 
+                alt="RXCLEAR alternative medicine options UI"
+                style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px", boxShadow: "0 12px 40px rgba(0,0,0,0.08)" }}
+              />
             </div>
           </div>
         </div>
@@ -145,41 +95,11 @@ export default function FeatureSections() {
             </div>
 
             <div className="lp-feature-visual" aria-hidden="true">
-              <div className="lp-pharmacy-visual">
-                {[
-                  {
-                    name: "Augmentin 625 Duo",
-                    platforms: ["Tata 1mg", "PharmEasy", "Apollo", "Netmeds"],
-                    colors: [
-                      "lp-pharmacy-link-tata",
-                      "lp-pharmacy-link-pharma",
-                      "lp-pharmacy-link-apollo",
-                      "lp-pharmacy-link-netmeds",
-                    ],
-                  },
-                  {
-                    name: "Moxikind CV 625 (alt)",
-                    platforms: ["Tata 1mg", "PharmEasy", "Apollo", "Netmeds"],
-                    colors: [
-                      "lp-pharmacy-link-tata",
-                      "lp-pharmacy-link-pharma",
-                      "lp-pharmacy-link-apollo",
-                      "lp-pharmacy-link-netmeds",
-                    ],
-                  },
-                ].map((med) => (
-                  <div key={med.name} className="lp-pharmacy-med">
-                    <div className="lp-pharmacy-med-name">{med.name}</div>
-                    <div className="lp-pharmacy-links">
-                      {med.platforms.map((p, i) => (
-                        <span key={p} className={`lp-pharmacy-link ${med.colors[i]}`}>
-                          {p} <span style={{ opacity: 0.6, fontSize: "0.65em" }}>↗</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <img 
+                src={feature03Img} 
+                alt="RXCLEAR pharmacy link options UI"
+                style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px", boxShadow: "0 12px 40px rgba(0,0,0,0.08)" }}
+              />
             </div>
           </div>
         </div>

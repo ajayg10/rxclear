@@ -170,6 +170,186 @@
   text-align: center;
 }
 
+/* ── AWS / Builder Center Strip ─────────────────────────── */
+
+.ap-powered-strip {
+  --ps-accent:      var(--ap-accent, #D97745);
+  --ps-accent-dark: var(--ap-accent-dark, #B95D34);
+  --ps-accent-soft: var(--ap-accent-soft, #F2E1D5);
+  --ps-border:      var(--ap-border, #E6E0D7);
+  --ps-surface:     var(--ap-surface, #FFFFFF);
+  --ps-text:        var(--ap-text, #211E1A);
+  --ps-text-2:      var(--ap-text-2, #706A62);
+  --ps-text-3:      var(--ap-text-3, #A39D94);
+ 
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center; /* centred instead of flex-start */
+  gap: 12px 24px;
+ 
+  width: 100%;
+  margin: 0 auto 32px;
+}
+ 
+/* Primary: a soft pill with a tinted icon chip */
+.ap-powered-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+ 
+  padding: 6px 14px 6px 7px;
+ 
+  background: linear-gradient(180deg, var(--ps-surface) 0%, #FDF9F5 100%);
+  border: 1px solid var(--ps-border);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(33, 30, 26, 0.05);
+ 
+  color: var(--ps-text-2);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+ 
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+ 
+.ap-powered-badge strong {
+  color: var(--ps-text);
+  font-weight: 600;
+}
+ 
+.ap-powered-badge:hover {
+  border-color: #E3B79E; /* fallback */
+  border-color: color-mix(in srgb, var(--ps-accent) 45%, var(--ps-border));
+  box-shadow:
+    0 4px 14px rgba(217, 119, 69, 0.14),
+    0 1px 2px rgba(33, 30, 26, 0.06);
+  transform: translateY(-1px);
+}
+ 
+.ap-powered-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+ 
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+ 
+  background: var(--ps-accent-soft);
+  color: var(--ps-accent-dark);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+ 
+.ap-powered-arrow {
+  font-size: 0.85rem;
+  color: var(--ps-text-3);
+  transition: transform 180ms ease, color 180ms ease;
+}
+ 
+.ap-powered-badge:hover .ap-powered-arrow {
+  color: var(--ps-accent-dark);
+  transform: translate(2px, -2px);
+}
+ 
+/* Secondary: quiet text link, underline appears on hover */
+.ap-builder-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+ 
+  padding: 4px 0;
+ 
+  color: var(--ps-text-2);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+ 
+  transition: color 180ms ease;
+}
+ 
+.ap-builder-text {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 180ms ease;
+}
+ 
+.ap-builder-arrow {
+  font-size: 0.8rem;
+  color: var(--ps-text-3);
+  transition: transform 180ms ease, color 180ms ease;
+}
+ 
+.ap-builder-link:hover {
+  color: var(--ps-text);
+}
+ 
+.ap-builder-link:hover .ap-builder-text {
+  text-decoration-color: var(--ps-accent);
+}
+ 
+.ap-builder-link:hover .ap-builder-arrow {
+  color: var(--ps-accent-dark);
+  transform: translate(2px, -2px);
+}
+ 
+/* Keyboard focus */
+.ap-powered-badge:focus-visible,
+.ap-builder-link:focus-visible {
+  outline: 2px solid var(--ps-accent);
+  outline-offset: 3px;
+}
+ 
+/* ── Mobile: stays centred, wraps to two lines instead of overflowing ── */
+@media (max-width: 640px) {
+  .ap-powered-strip {
+    gap: 8px 16px;
+    margin-bottom: 24px;
+  }
+ 
+  .ap-powered-badge {
+    padding: 5px 12px 5px 6px;
+    gap: 8px;
+    font-size: 0.78rem;
+  }
+ 
+  .ap-powered-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 0.66rem;
+  }
+ 
+  .ap-builder-link {
+    font-size: 0.76rem;
+  }
+}
+ 
+@media (prefers-reduced-motion: reduce) {
+  .ap-powered-badge,
+  .ap-powered-arrow,
+  .ap-builder-link,
+  .ap-builder-text,
+  .ap-builder-arrow {
+    transition: none;
+  }
+ 
+  .ap-powered-badge:hover,
+  .ap-powered-badge:hover .ap-powered-arrow,
+  .ap-builder-link:hover .ap-builder-arrow {
+    transform: none;
+  }
+}
+
 .ap-empty-eyebrow {
   font-family: var(--ap-sans);
   font-size: 0.75rem;

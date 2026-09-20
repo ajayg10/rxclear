@@ -311,6 +311,29 @@ export default function AppPage() {
         {/* ════ EMPTY STATE ════ */}
         {showEmpty && (
           <div className="ap-empty-state">
+            {/* AWS STRIP */}
+            <div className="ap-powered-strip">
+              <a
+                href="https://aws.amazon.com/bedrock/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ap-powered-badge"
+              >
+                <span className="ap-powered-icon" aria-hidden="true">✦</span>
+                <span>Powered by AWS Bedrock</span>
+                <span className="ap-powered-arrow" aria-hidden="true">↗</span>
+              </a>
+
+              <a
+                href="https://builder.aws.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ap-builder-link"
+              >
+                Explore AWS Builder Center
+                <span aria-hidden="true">↗</span>
+              </a>
+            </div>
             <span className="ap-empty-eyebrow">Prescription clarity, simplified</span>
             <h1 className="ap-empty-headline">Upload your prescription.</h1>
             <p className="ap-empty-sub">

@@ -1,5 +1,5 @@
 import { ChangeEvent, DragEvent, FormEvent, StrictMode, useState } from "react";
-import "../app.css";
+import "../styles.css";
 import { MedicineItem, PrescriptionAnalysis } from "../types";
 import { samplePrescriptions, generateBuyLinks } from "../mockData";
 

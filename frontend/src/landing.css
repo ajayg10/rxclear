@@ -85,6 +85,11 @@
   }
 }
 
+.lp-navbar,
+.lp-navbar-inner {
+  box-sizing: border-box;
+}
+
 /* ── Navbar ──────────────────────────────────────────────── */
 .lp-navbar {
   position: fixed;
@@ -962,22 +967,19 @@
 }
 
 .lp-feature-visual {
-  border: 1px solid var(--lp-border);
   border-radius: var(--lp-radius-lg);
-  background: var(--lp-bg-2);
   overflow: hidden;
   box-shadow: var(--lp-shadow);
-  aspect-ratio: 4/3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  /* Let the image's own aspect ratio drive the height */
+  width: 100%;
+  line-height: 0; /* collapse inline gap under <img> */
 }
 
 .lp-feature-visual-inner {
   padding: 28px;
   width: 100%;
 }
+
 
 /* Prescription card visual for Feature 1 */
 .lp-rx-card {

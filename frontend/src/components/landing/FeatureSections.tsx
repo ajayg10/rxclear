@@ -1,7 +1,13 @@
 import { Link } from "react-router-dom";
-import feature01Img from "../../assets/feature01.png";
-import feature02Img from "../../assets/feature02.png";
-import feature03Img from "../../assets/feature03.png";
+import feature1Img from "../../assets/feature_1.png";
+import feature2Img from "../../assets/feature_2.png";
+import feature3Img from "../../assets/feature_3.png";
+
+const imgStyle: React.CSSProperties = {
+  width: "100%",
+  height: "auto",
+  display: "block",
+};
 
 export default function FeatureSections() {
   return (
@@ -28,10 +34,10 @@ export default function FeatureSections() {
             </div>
 
             <div className="lp-feature-visual" aria-hidden="true">
-              <img 
-                src={feature01Img} 
+              <img
+                src={feature1Img}
                 alt="RXCLEAR medication schedule UI"
-                style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px", boxShadow: "0 12px 40px rgba(0,0,0,0.08)" }}
+                style={imgStyle}
               />
             </div>
           </div>
@@ -62,10 +68,10 @@ export default function FeatureSections() {
             </div>
 
             <div className="lp-feature-visual" aria-hidden="true">
-              <img 
-                src={feature02Img} 
+              <img
+                src={feature2Img}
                 alt="RXCLEAR alternative medicine options UI"
-                style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px", boxShadow: "0 12px 40px rgba(0,0,0,0.08)" }}
+                style={imgStyle}
               />
             </div>
           </div>
@@ -95,10 +101,10 @@ export default function FeatureSections() {
             </div>
 
             <div className="lp-feature-visual" aria-hidden="true">
-              <img 
-                src={feature03Img} 
+              <img
+                src={feature3Img}
                 alt="RXCLEAR pharmacy link options UI"
-                style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px", boxShadow: "0 12px 40px rgba(0,0,0,0.08)" }}
+                style={imgStyle}
               />
             </div>
           </div>

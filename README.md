@@ -46,40 +46,61 @@
 ## 🏗️ Architecture & Serverless Stack
 
 ```
-+-----------------------------------------------------------------------+
-|                            RXCLEAR Frontend                           |
-|                  React 18 + TypeScript + Tailwind CSS                 |
-+-----------------------------------------------------------------------+
-                                   |
-         +-------------------------+-------------------------+
-         |                                                   |
-         v                                                   v
-+------------------------+                        +---------------------+
-|   REST API Polling     |                        | Direct S3 Upload    |
-|  (AWS API Gateway)     |                        | Presigned S3 URLs   |
-+------------------------+                        +---------------------+
-         |                                                   |
-         v                                                   v
-+------------------------+                        +---------------------+
-| AWS Lambda Functions   |                        |  Amazon S3 Bucket   |
-| 1. UploadHandler       |                        | Prescription Images |
-| 2. GetAnalysis         |                        | (24h Auto Expiry)   |
-| 3. AnalyzeRx (Async)   |<-----------------------+---------------------+
-+------------------------+     S3 ObjectCreated
-         |
-         +-------------------------+
-         |                         |
-         v                         v
-+-------------------+    +--------------------+
-|  Amazon Bedrock   |    |  Amazon DynamoDB   |
-| AI OCR & Analysis |    | Submissions Table  |
-+-------------------+    +--------------------+
++---------------------------------------------------------------------------------+
+|                         RXCLEAR Frontend (Amplify Hosting)                      |
+|                  React 18 + TypeScript + Vite + Custom Design System            |
++---------------------------------------------------------------------------------+
+                                       |
+             +-------------------------+-------------------------+
+             |                                                   |
+             v                                                   v
+    +------------------------+                        +---------------------+
+    |   REST API Polling     |                        | Direct S3 Upload    |
+    |  (AWS API Gateway)     |                        | Presigned S3 URLs   |
+    +------------------------+                        +---------------------+
+             |                                                   |
+             v                                                   v
+    +------------------------+                        +---------------------+
+    | AWS Lambda Functions   |                        |  Amazon S3 Bucket   |
+    | 1. UploadHandler       |                        | Prescription Images |
+    | 2. GetAnalysis         |                        | (24h Auto Expiry)   |
+    | 3. AnalyzeRx (Async)   |<-----------------------+---------------------+
+    +------------------------+     S3 ObjectCreated
+             |
+             +-------------------------+
+             |                         |
+             v                         v
+    +-------------------+    +--------------------+
+    |  Amazon Bedrock   |    |  Amazon DynamoDB   |
+    | AI OCR & Analysis |    | Submissions Table  |
+    | (Claude Haiku 4.5)|    |  Interactions DB   |
+    +-------------------+    +--------------------+
 ```
 
-### Serverless Architecture Highlights:
-- **Event-Driven Execution:** Uses AWS Lambda, S3 event notifications, and DynamoDB for asynchronous background processing without maintaining 24/7 dedicated servers.
-- **Privacy & PHI Safety:** Automated S3 lifecycle rules automatically delete uploaded prescription images after **24 hours**. DynamoDB TTL removes history after **7 days**. Structured CloudWatch logging explicitly enforces PHI/PII safety rules.
-- **Infrastructure as Code:** Fully declared using **AWS SAM** (`infra/template.yaml`).
+---
+
+## ☁️ AWS Services Used & Why We Use Them
+
+RXCLEAR is built 100% serverless on AWS, engineered for high availability, sub-second latency, zero idle cost, and strict healthcare data privacy (PHI compliance). Below is the breakdown of every AWS service utilized in the application and why it was chosen:
+
+| AWS Service | Role in RXCLEAR | Why We Use It |
+|---|---|---|
+| **Amazon Bedrock** | Multimodal AI Inference & Vision Analysis | Deciphers complex, unstructured doctor handwriting from prescription photos using **Claude 3.5 / Haiku 4.5** (`global.anthropic.claude-haiku-4-5-20251001-v1:0`). Extracts dosage, daily timing, duration, and patient precautions into structured JSON. Generates bio-equivalent generic and branded substitute recommendations. Haiku provides near-instant response times and ultra-low cost per token without managing dedicated GPU infrastructure. |
+| **AWS Lambda** | Event-Driven Serverless Compute | Powers the backend microservices using Node.js 20.x bundled via esbuild:<br>• `upload-handler`: Issues pre-signed S3 POST URLs and initializes DynamoDB records.<br>• `analyze-rx`: Async background processor triggered by S3 uploads; calls Bedrock and updates results.<br>• `get-analysis`: Handles frontend polling for completed analysis.<br>**Why:** $0 cost when idle, scales automatically from zero to thousands of concurrent uploads, and prevents gateway timeouts by running AI processing asynchronously. |
+| **Amazon S3** | Ephemeral, Encrypted Prescription Storage | Stores temporary prescription images uploaded directly from client browsers using pre-signed POST URLs with server-side AES-256 encryption (`SSE-S3`).<br>**Why:** Direct client-to-S3 upload bypasses API Gateway payload limits (10MB) and Lambda memory costs. Configured with **S3 Lifecycle Rules** (`ExpireUploadsAfterOneDay`) to automatically delete images after **24 hours**, ensuring strict patient privacy and zero long-term storage fees. |
+| **Amazon DynamoDB** | Fast NoSQL State & Reference Database | Uses two tables in On-Demand capacity mode (`PAY_PER_REQUEST`):<br>• `SubmissionHistoryTable`: Tracks job states (`PENDING` ➔ `PROCESSING` ➔ `COMPLETED`/`FAILED`) and stores parsed clinical results.<br>• `DrugInteractionsTable`: Fast lookups for medication contraindications.<br>**Why:** Provides single-digit millisecond reads/writes for frontend polling. Enabled with **Time-To-Live (TTL)** on `expiresAt` to automatically purge historical records after 7 days, maintaining zero database maintenance and compliance. |
+| **Amazon API Gateway** | Managed REST API Entry Point | Exposes `/upload` and `/analysis/{submissionId}` endpoints with built-in CORS handling for local dev and production Amplify domains.<br>**Why:** Fully managed gateway providing traffic routing, DDoS protection, request validation, and clean decoupling between client requests and Lambda handlers. |
+| **AWS Amplify Hosting** | Frontend CI/CD & Global CDN Delivery | Hosts the React + TypeScript frontend with continuous deployment connected to the GitHub repository.<br>**Why:** Automatically builds and deploys on every git push, delivers static assets via AWS's global edge network for fast loading, provides free automated SSL/TLS certificates, and supports seamless custom domain management (e.g., `agdev10.online`). |
+| **AWS SAM & CloudFormation** | Infrastructure as Code (IaC) | The entire backend architecture is codified in `infra/template.yaml` using the AWS Serverless Application Model (SAM).<br>**Why:** Enables reproducible, single-command deployments (`sam deploy`), version-controlled cloud infrastructure, automated esbuild packaging, and zero manual console configuration drift. |
+| **AWS IAM** | Granular Least-Privilege Security | Manages role-based execution policies for each Lambda function.<br>**Why:** Enforces the principle of least privilege (`DynamoDBWritePolicy`, `DynamoDBReadPolicy`, scoped `s3:GetObject`, `bedrock:InvokeModel`). Eliminates hardcoded credentials and API keys by using short-lived, rotated IAM credentials. |
+| **Amazon CloudWatch** | Real-Time Observability & Monitoring | Ingests execution logs, latency metrics, and error rates across API Gateway and Lambda functions.<br>**Why:** Provides real-time debugging and performance tracking while enforcing PHI-safe structured logging (no raw prescription text, patient names, or image binaries are written to logs). |
+
+---
+
+### 💡 Cost-Optimization & Privacy Highlights
+- **Zero Idle Costs:** When no prescriptions are being analyzed, total compute and database costs are $0.00.
+- **Asynchronous Decoupling:** S3 upload triggers the analysis Lambda in the background, avoiding costly long-running synchronous HTTP connections.
+- **Automated Data Purging:** S3 Lifecycle (24-hour expiration) + DynamoDB TTL (7-day expiration) guarantee that sensitive medical data is never indefinitely stored on the cloud.
 
 ---
 

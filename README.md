@@ -154,5 +154,27 @@ sam build
 
 ---
 
+## 🧠 What I Learned Through the Project
+
+Building RXCLEAR as an end-to-end, production-ready AI healthcare platform was a transformative learning experience in cloud-native engineering. Here are the key takeaways:
+
+1. **The Power of the Serverless Paradigm:**
+   - Moving away from traditional always-on servers (like dedicated EC2 instances or long-running containers) to a 100% serverless architecture completely shifted my engineering perspective.
+   - I learned how to build high-performance systems with **zero idle costs** ($0.00 when not in use), while retaining the capability to seamlessly burst to handle sudden spikes in traffic without manual cluster provisioning or capacity guesswork.
+
+2. **AWS Lambda & Asynchronous Event-Driven Design:**
+   - Deepened my understanding of event-driven cloud architecture by decomposing backend logic into single-purpose Lambda functions (`upload-handler`, `analyze-rx`, and `get-analysis`).
+   - Learned how to bypass API Gateway's strict 29-second execution timeout by decoupling image uploads from AI inference: generating pre-signed S3 POST URLs allowed the client to stream files directly to S3, which natively emitted an `s3:ObjectCreated` event that triggered our background AI worker asynchronously while the client polled for results.
+
+3. **Continuous Deployment & Edge Delivery with AWS Amplify:**
+   - Mastered modern CI/CD and frontend hosting using **AWS Amplify Hosting** configured for a monorepo setup via `amplify.yml`.
+   - Learned how effortless it is to achieve automated preview and production deployments triggered by GitHub pushes, instant worldwide content caching via AWS's global CDN, zero-config SSL/TLS certification, and hassle-free custom domain mapping (such as connecting `rxclear.agdev10.online`).
+
+4. **Multimodal AI Engineering & Cost Optimization with Amazon Bedrock:**
+   - Gained practical expertise in harnessing foundational multimodal models (Anthropic Claude 3.5 / Haiku 4.5 via Bedrock cross-region inference profiles) to solve real-world messy handwriting and medical document OCR challenges.
+   - Discovered how critical model selection and prompt design are: by leveraging **Claude Haiku 4.5** instead of more expensive large models, we achieved sub-2-second clinical analysis response times and cut API inference costs by over 80% without sacrificing structured extraction accuracy or clinical reasoning.
+
+---
+
 ## 🛡️ Medical Disclaimer
 *RXCLEAR is designed to assist patients in understanding doctor directions, checking daily schedules, and identifying bio-equivalent alternatives when medicines are out of stock. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified medical professional or registered pharmacist before switching medications.*
